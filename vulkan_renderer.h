@@ -54,16 +54,16 @@ private:
 
     } main_device;
     VkQueue graphics_queue;
-    
-    // Vulkan functions
-    //find our GPU
-    void get_physical_device();
-    
-    bool check_device_suitable(const VkPhysicalDevice &device);
 
+    /// Vulkan functions
+    ///Checks
     //if Vulkan supports needed extensions
     bool check_instance_extensions_support(const std::vector<const char*> &extensions_to_check);
+    bool check_device_suitable(const VkPhysicalDevice &device);
 
+    //Creation of stuff
+    //find our GPU
+    void get_physical_device();
     void create_logical_device();
     void create_instance();
 
