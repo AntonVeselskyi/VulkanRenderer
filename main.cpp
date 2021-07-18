@@ -19,7 +19,6 @@ void init_window(std::string w_name = "Test Window", const int width = 800, cons
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     window = glfwCreateWindow(width, height, w_name.c_str(), nullptr, nullptr);
-
 }
 
 int main()
