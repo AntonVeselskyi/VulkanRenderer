@@ -21,6 +21,9 @@
     <ClInclude Include="vulkan_renderer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="vk_utils.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

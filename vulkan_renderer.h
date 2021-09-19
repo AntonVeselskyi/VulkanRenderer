@@ -23,12 +23,16 @@ struct QueueFamilyIndices
 //(which requests are supported)
 QueueFamilyIndices get_queue_families_for_device(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
+//Choose functions
+VkSurfaceFormatKHR choose_best_surface_format(const std::vector<VkSurfaceFormatKHR> &formats);
+VkPresentModeKHR choose_best_presentation_mode(const std::vector<VkPresentModeKHR> &modes);
+VkExtent2D choose_best_swap_extent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window);
 
-struct SwapChainCreationDetails
+struct SwapchainCreationDetails
 {
     //image size/extent, etc
     VkSurfaceCapabilitiesKHR surface_capabilities;
-    //how colot is stored RGB || GRBA, size of each color, etc.
+    //how colors are stored RGB || GRBA, size of each color, etc.
     std::vector<VkSurfaceFormatKHR> surface_formats;
     //how to queue of Swapchain images too be presented to the surface
     std::vector<VkPresentModeKHR> presentation_modes;
@@ -39,7 +43,17 @@ struct SwapChainCreationDetails
     }
 };
 
-SwapChainCreationDetails get_swapchain_details_for_device(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
+SwapchainCreationDetails get_swapchain_details_for_device(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
+
+struct SwapchainImage
+{
+    //access to the existing image
+    VkImage image;
+    //something we create ourselfs
+    VkImageView image_view;
+};
+
+VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
 
 class VulkanRenderer
 {
@@ -71,14 +85,24 @@ private:
     VkInstance _instance;
     struct
     {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
+        VkPhysicalDevice physical_device; //GPU
+        VkDevice logical_device; //Interface to the GPU
         QueueFamilyIndices queue_indecies;
 
     } _main_device;
+    //drawing to our images
     VkQueue _graphics_queue;
+    //taking and presenting images to the surface
     VkQueue _presentation_queue;
     VkSurfaceKHR _surface;
+    //swapchain stuff
+    VkSwapchainKHR _swapchain;
+    
+    //info needed for image views
+    VkFormat _swapchain_image_format;
+    VkExtent2D _swapchain_extent;
+    
+    std::vector<SwapchainImage> _swapchain_images;
 
     /// Vulkan functions
     ///Checks
@@ -95,4 +119,5 @@ private:
     void create_logical_device();
     void create_instance();
     void create_surface();
+    void create_swapchain();
 };
