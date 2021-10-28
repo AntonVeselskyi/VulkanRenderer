@@ -11,6 +11,14 @@ VulkanRenderer vk_renderer;
 
 void init_window(std::string w_name = "Test Window", const int width = 800, const int height = 600)
 {
+    std::cout << "DEBUG IS: " <<
+#ifdef NDEBUG
+        "OFF"
+#else
+        "ON"
+#endif
+        << "\n";
+
     // init GLFW
     glfwInit();
 

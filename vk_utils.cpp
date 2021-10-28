@@ -158,3 +158,22 @@ VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format, V
 
     return image_view;
 }
+
+VkShaderModule create_shader_module(VkDevice logical_device, std::vector<char> &shader_code)
+{
+    VkShaderModuleCreateInfo create_info
+    {
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .codeSize = shader_code.size(),
+        .pCode = reinterpret_cast<const uint32_t*>(shader_code.data())
+    };
+
+    VkShaderModule shader_module;
+    VkResult res = vkCreateShaderModule(logical_device, &create_info, nullptr, &shader_module);
+    if(res != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create shader module!");
+    }
+
+    return shader_module;
+}

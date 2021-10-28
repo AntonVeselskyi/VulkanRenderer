@@ -54,8 +54,12 @@ private:
     //info needed for image views
     VkFormat _swapchain_image_format;
     VkExtent2D _swapchain_extent;
-    
     std::vector<SwapchainImage> _swapchain_images;
+
+    //pipeline
+    VkPipelineLayout _pipline_layout;
+    VkRenderPass _render_pass;
+    VkPipeline _graphics_pipline;
 
     /// Vulkan functions
     ///Checks
@@ -73,4 +77,6 @@ private:
     void create_instance();
     void create_surface();
     void create_swapchain();
+    void create_render_pass();
+    void create_graphics_pipeline();
 };
