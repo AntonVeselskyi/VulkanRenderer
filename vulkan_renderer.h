@@ -55,11 +55,19 @@ private:
     VkFormat _swapchain_image_format;
     VkExtent2D _swapchain_extent;
     std::vector<SwapchainImage> _swapchain_images;
+    //one framebuffer for each swapchain image
+    std::vector<VkFramebuffer> _swapchain_framebuffers;
+    //one to one connection between --> 
+    //SwapchainImage <--> VkFramebuffer <--> VkCommandBuffer
+    std::vector<VkCommandBuffer> _command_buffers;
 
     //pipeline
     VkPipelineLayout _pipline_layout;
     VkRenderPass _render_pass;
     VkPipeline _graphics_pipline;
+
+    //pools
+    VkCommandPool _graphics_command_pool;
 
     /// Vulkan functions
     ///Checks
@@ -79,4 +87,10 @@ private:
     void create_swapchain();
     void create_render_pass();
     void create_graphics_pipeline();
+    void create_framebuffers();
+    void create_command_pool();
+    void create_command_buffers();
+
+    //record 
+    void record_commands();
 };
