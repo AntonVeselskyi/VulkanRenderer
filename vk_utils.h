@@ -55,7 +55,6 @@ struct SwapchainImage
 VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
 VkShaderModule create_shader_module(VkDevice logical_device, std::vector<char> &shader_code);
 
-
 //read as binary, spv is binary
 inline std::vector<char> read_f(const std::string &filename)
 {

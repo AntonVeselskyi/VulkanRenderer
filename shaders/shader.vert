@@ -10,7 +10,7 @@ vec3 positions[3] = vec3[]
 	//screen coordinates between 1 and -1
 	vec3(0.0, -0.4, 0.0),
 	vec3(0.4, 0.4, 0.0),
-	vec3(-0.0, 0.4, 0.0)
+	vec3(-0.4, 0.4, 0.0)
 );
 
 //Triangle vertex colors

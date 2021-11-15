@@ -14,12 +14,15 @@ public:
     VulkanRenderer() = default;
 
     int init(GLFWwindow *new_window);
-
+    void draw();
     void cleanup();
 
     ~VulkanRenderer(){}
 
 private:
+    //max amount of images on the queue
+    static constexpr uint32_t MAX_FRAME_DRAWS = 2;
+
     const std::vector<const char*> _needed_device_extentions
     {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -32,6 +35,8 @@ private:
 #endif
 
     GLFWwindow *_window;
+
+    uint32_t current_frame = 0;
 
     // Vulkan components
     //The instance is the connection between your application and the Vulkan library 
@@ -57,7 +62,7 @@ private:
     std::vector<SwapchainImage> _swapchain_images;
     //one framebuffer for each swapchain image
     std::vector<VkFramebuffer> _swapchain_framebuffers;
-    //one to one connection between --> 
+    //one to one connection between -->
     //SwapchainImage <--> VkFramebuffer <--> VkCommandBuffer
     std::vector<VkCommandBuffer> _command_buffers;
 
@@ -68,6 +73,11 @@ private:
 
     //pools
     VkCommandPool _graphics_command_pool;
+
+    //synchronization
+    std::vector<VkSemaphore> _image_available;
+    std::vector<VkSemaphore> _render_finished;
+    std::vector<VkFence> _draw_fences;
 
     /// Vulkan functions
     ///Checks
@@ -90,7 +100,8 @@ private:
     void create_framebuffers();
     void create_command_pool();
     void create_command_buffers();
+    void create_synchronization();
 
-    //record 
+    //record
     void record_commands();
 };
