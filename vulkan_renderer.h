@@ -5,7 +5,9 @@
 
 #include <stdexcept>
 #include <vector>
+
 #include "vk_utils.h"
+#include "vk_mesh.h"
 
 
 class VulkanRenderer
@@ -35,8 +37,10 @@ private:
 #endif
 
     GLFWwindow *_window;
-
     uint32_t current_frame = 0;
+
+    // Scene objects
+    Mesh _first_mesh;
 
     // Vulkan components
     //The instance is the connection between your application and the Vulkan library 

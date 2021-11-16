@@ -145,11 +145,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="io_utils.h" />
+    <ClInclude Include="vk_mesh.h" />
     <ClInclude Include="vk_utils.h" />
     <ClInclude Include="vulkan_renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="vk_mesh.cpp" />
     <ClCompile Include="vk_utils.cpp" />
     <ClCompile Include="vulkan_renderer.cpp" />
   </ItemGroup>

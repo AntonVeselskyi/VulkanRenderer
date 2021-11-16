@@ -24,6 +24,20 @@ int VulkanRenderer::init(GLFWwindow *new_window)
         vkGetDeviceQueue(_main_device.logical_device, _main_device.queue_indecies.presentation_family, 0, &_presentation_queue);
         //so far we checked that device supports presenting to our surface and created the queue that allows us to do that
         
+       //create a mesh
+        std::vector<Vertex> mesh_vertices =
+        {
+            {{0.2,-0.2,0.0}, {1.,0.,0.}},
+            {{0.2,0.2,0.0}, {1.,0.,0.}},
+            {{-0.2,0.2,0.0}, {1.,0.,0.}},
+
+            {{-0.5,0.5,0.0}, {0.,1.,0.}},
+            {{-0.5,-0.5,0.0}, {1.,1.,0.}},
+            {{0.5,-0.5,0.0}, {1.,0.,0.}},
+
+        };
+        _first_mesh = Mesh(_main_device.physical_device, _main_device.logical_device, mesh_vertices);
+
         create_swapchain();
         create_render_pass();
         create_graphics_pipeline();
@@ -120,6 +134,8 @@ void VulkanRenderer::cleanup()
     //(nothing left on the queue)
     vkDeviceWaitIdle(_main_device.logical_device);
     
+    _first_mesh.destroy_vertex_buffer();
+
     for(auto fence : _draw_fences)
         vkDestroyFence(_main_device.logical_device, fence, nullptr);
     for(auto semaphore : _image_available)
@@ -582,16 +598,52 @@ void VulkanRenderer::create_graphics_pipeline()
         fragment_shader_createinfo
     };
 
-    //VERTEX INPUT (TODO: code it, vertecies are hardcoded for now)
+    //VERTEX INPUT
+    //How a data for any 1 vertex (pos, color, texture, normals...) is layout
+    VkVertexInputBindingDescription binding_description
+    {
+        //can bind multiple streams of data, define which one
+        //which IN parameter in the vertex shader 
+        .binding = 0,
+        //size of the individual vertex
+        .stride = sizeof(Vertex),
+        //How to move the data after each vertex
+        //if we draw multiple instances:
+        // draw all 1st vertices and thend draw all 2nd...
+        // or draw all 1st object vertices, then 2nd...
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+    };
+
+    //How data within a vertex is defined
+    std::vector<VkVertexInputAttributeDescription> attribute_descriptions =
+    {
+        //Position description
+        VkVertexInputAttributeDescription
+        {
+            .location = 0,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32_SFLOAT, //data format
+            .offset = offsetof(Vertex, position)
+        },
+        //ColorDescription
+        VkVertexInputAttributeDescription
+        {
+            .location = 1,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32_SFLOAT,
+            .offset = offsetof(Vertex, color)
+        }
+    };
+
     VkPipelineVertexInputStateCreateInfo vertex_input_createinfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 0,
+        .vertexBindingDescriptionCount = 1,
         //list of vertex binding desc (data spacing, stride informantion)
-        .pVertexBindingDescriptions = nullptr,
-        .vertexAttributeDescriptionCount = 0,
+        .pVertexBindingDescriptions = &binding_description,
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size()),
         //(data format and where to bind it)
-        .pVertexAttributeDescriptions = nullptr
+        .pVertexAttributeDescriptions = attribute_descriptions.data()
     };
 
     //INPUT ASSEMBLY
@@ -931,8 +983,15 @@ void VulkanRenderer::record_commands()
             //bind pipeline to render pass
             vkCmdBindPipeline(_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphics_pipline);
 
+            //Buffers to bind to drawing
+            VkBuffer vertex_buffers[] = {_first_mesh.get_vertex_buffer()};
+            VkDeviceSize offsets[] = {0};
+
+            vkCmdBindVertexBuffers(_command_buffers[i], 0/*binding from shader*/, 1, vertex_buffers, offsets);
+
+
             //execute our pipline
-            vkCmdDraw(_command_buffers[i], 3/*vertex count*/, 1, 0, 0);
+            vkCmdDraw(_command_buffers[i], _first_mesh.get_vertex_count(), 1, 0, 0);
             //go through our pipline 3 times without passing any values
 
 

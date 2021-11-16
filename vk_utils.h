@@ -2,9 +2,16 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <glfw/glfw3.h>
+#include <glm/glm.hpp>
 #include <stdexcept>
 #include <vector>
 #include <fstream>
+
+struct Vertex
+{
+    glm::vec3 position; //x, y, z
+    glm::vec3 color;
+};
 
 //store indices(locations) of queue families
 struct QueueFamilyIndices
