@@ -13,6 +13,13 @@ struct Vertex
     glm::vec3 color;
 };
 
+void create_buffer(const VkPhysicalDevice p_device, VkDevice l_device, VkDeviceSize buffer_size,
+                   VkBufferUsageFlags buffer_usage_falgs, VkMemoryPropertyFlags buffer_property_falgs,
+                   VkBuffer *vertex_buffer, VkDeviceMemory *vertex_buffer_memory);
+
+void copy_buffer(VkDevice l_device, VkQueue transfer_queue, VkCommandPool transfer_command_pool,
+                 VkBuffer src, VkBuffer dst, VkDeviceSize buffer_size);
+
 //store indices(locations) of queue families
 struct QueueFamilyIndices
 {

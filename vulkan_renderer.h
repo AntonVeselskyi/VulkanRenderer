@@ -40,7 +40,7 @@ private:
     uint32_t current_frame = 0;
 
     // Scene objects
-    Mesh _first_mesh;
+    std::vector<Mesh> _meshes;
 
     // Vulkan components
     //The instance is the connection between your application and the Vulkan library 

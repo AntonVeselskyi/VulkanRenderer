@@ -1,6 +1,114 @@
 #include <iostream>
 #include "vk_utils.h"
 
+void create_buffer(const VkPhysicalDevice p_device, VkDevice l_device, VkDeviceSize buffer_size,
+                   VkBufferUsageFlags buffer_usage_falgs, VkMemoryPropertyFlags buffer_property_falgs,
+                   VkBuffer *vertex_buffer, VkDeviceMemory *vertex_buffer_memory)
+{
+    //1
+    //just layout of buffer
+    VkBufferCreateInfo buffer_create_info
+    {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = buffer_size,
+        .usage = buffer_usage_falgs,
+        //1 thing will use this buffer
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    VkResult res = vkCreateBuffer(l_device, &buffer_create_info, nullptr, vertex_buffer);
+    if(res != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create vertex buffer!");
+    }
+
+    //2
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(l_device, *vertex_buffer, &memory_requirements);
+
+    auto findMemoryTypeIndex = [&](uint32_t allowed_types/*defined by buffer*/, VkMemoryPropertyFlags properties/*defined by ourselfs*/)
+    {
+        VkPhysicalDeviceMemoryProperties physical_properties;
+        //Actual properties of memory sections of my GPU
+        vkGetPhysicalDeviceMemoryProperties(p_device, &physical_properties);
+
+        for(uint32_t i = 0; i < physical_properties.memoryTypeCount; ++i)
+        {
+            const bool is_type_allowed = allowed_types & (1 << i);
+            //all properties flags must match
+            const bool is_type_flags_match = (physical_properties.memoryTypes[i].propertyFlags & properties) == properties;
+
+            //return valid type
+            if(is_type_allowed && is_type_flags_match)
+                return i;
+        }
+    };
+
+    VkMemoryAllocateInfo alloc_info
+    {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = memory_requirements.size,
+        .memoryTypeIndex = findMemoryTypeIndex(memory_requirements.memoryTypeBits, buffer_property_falgs)
+    };
+
+    //3
+    res = vkAllocateMemory(l_device, &alloc_info, nullptr, vertex_buffer_memory);
+    if(res != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate vertex buffer memory!");
+    }
+
+    //4
+    //Bind allocated data to the buffer
+    vkBindBufferMemory(l_device, *vertex_buffer, *vertex_buffer_memory, 0);
+}
+
+void copy_buffer(VkDevice l_device, VkQueue transfer_queue, VkCommandPool transfer_command_pool,
+                 VkBuffer src, VkBuffer dst, VkDeviceSize buffer_size)
+{
+    //buffer to hold transfer commands
+    VkCommandBuffer transfer_command_buffer;
+    VkCommandBufferAllocateInfo  transfer_command_buffer_alloc_info
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool = transfer_command_pool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+    vkAllocateCommandBuffers(l_device, &transfer_command_buffer_alloc_info, &transfer_command_buffer);
+
+    VkCommandBufferBeginInfo begin_info
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        //one time usage of this buffer
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+    };
+    //Start recording transfer commands
+    vkBeginCommandBuffer(transfer_command_buffer, &begin_info);
+    
+    //Details of what to copy where
+    VkBufferCopy buffer_copy_region
+    {
+        .srcOffset = 0,
+        .dstOffset = 0,
+        .size = buffer_size
+    };
+    vkCmdCopyBuffer(transfer_command_buffer, src, dst, 1, &buffer_copy_region);
+
+    vkEndCommandBuffer(transfer_command_buffer);
+
+    VkSubmitInfo submit_info
+    {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &transfer_command_buffer
+    };
+    vkQueueSubmit(transfer_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    vkQueueWaitIdle(transfer_queue);
+    vkFreeCommandBuffers(l_device, transfer_command_pool, 1, &transfer_command_buffer);
+}
+
 QueueFamilyIndices get_queue_families_for_device(const VkPhysicalDevice &device, const VkSurfaceKHR &surface)
 {
     QueueFamilyIndices indecies;

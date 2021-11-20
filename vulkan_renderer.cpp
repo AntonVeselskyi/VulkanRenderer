@@ -24,26 +24,46 @@ int VulkanRenderer::init(GLFWwindow *new_window)
         vkGetDeviceQueue(_main_device.logical_device, _main_device.queue_indecies.presentation_family, 0, &_presentation_queue);
         //so far we checked that device supports presenting to our surface and created the queue that allows us to do that
         
-       //create a mesh
-        std::vector<Vertex> mesh_vertices =
-        {
-            {{0.2,-0.2,0.0}, {1.,0.,0.}},
-            {{0.2,0.2,0.0}, {1.,0.,0.}},
-            {{-0.2,0.2,0.0}, {1.,0.,0.}},
-
-            {{-0.5,0.5,0.0}, {0.,1.,0.}},
-            {{-0.5,-0.5,0.0}, {1.,1.,0.}},
-            {{0.5,-0.5,0.0}, {1.,0.,0.}},
-
-        };
-        _first_mesh = Mesh(_main_device.physical_device, _main_device.logical_device, mesh_vertices);
-
         create_swapchain();
         create_render_pass();
         create_graphics_pipeline();
         create_framebuffers();
         create_command_pool();
         create_command_buffers();
+
+        //create a mesh
+        //vertex data
+        std::vector<Vertex> mesh_vertices =
+		{
+			{{-0.4,-0.2,0.0}, {1.,0.,0.}}, //0 shared
+			{{0.0,0.6,0.0}, {1.,0.,0.}}, //1 shared
+			{{-0.8,0.2,0.0}, {1.,1.,0.}}, //2
+			{{-0.8,-0.2,0.0}, {1.,1.,0.}}, //3
+        };
+		std::vector<Vertex> mesh_vertices2 =
+        {
+            {{0.4,0.2,0.0}, {1.,0.,0.}}, //0 shared
+            {{0.0,-0.6,0.0}, {1.,0.,0.}}, //1 shared
+            {{0.8,-0.2,0.0}, {1.,1.,0.}}, //2
+            {{0.8,0.2,0.0}, {1.,1.,0.}}, //3
+        };
+        //index data
+        std::vector<uint32_t> mesh_indices =
+        {
+            0, 1, 2,
+            2, 3, 0
+        };
+        Mesh mesh = Mesh(_main_device.physical_device, _main_device.logical_device,
+                           _graphics_queue, _graphics_command_pool,
+                           mesh_vertices, mesh_indices);
+        _meshes.push_back(mesh);
+
+        mesh = Mesh(_main_device.physical_device, _main_device.logical_device,
+                           _graphics_queue, _graphics_command_pool,
+                           mesh_vertices2, mesh_indices);
+        _meshes.push_back(mesh);
+
+
         record_commands();
         create_synchronization();
     }
@@ -134,8 +154,8 @@ void VulkanRenderer::cleanup()
     //(nothing left on the queue)
     vkDeviceWaitIdle(_main_device.logical_device);
     
-    _first_mesh.destroy_vertex_buffer();
-
+    for(auto mesh : _meshes)
+        mesh.destroy_buffers();
     for(auto fence : _draw_fences)
         vkDestroyFence(_main_device.logical_device, fence, nullptr);
     for(auto semaphore : _image_available)
@@ -983,17 +1003,17 @@ void VulkanRenderer::record_commands()
             //bind pipeline to render pass
             vkCmdBindPipeline(_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphics_pipline);
 
-            //Buffers to bind to drawing
-            VkBuffer vertex_buffers[] = {_first_mesh.get_vertex_buffer()};
-            VkDeviceSize offsets[] = {0};
+            for(Mesh mesh : _meshes)
+            {
+                //Buffers to bind to drawing
+                VkBuffer vertex_buffers[] = {mesh.get_vertex_buffer()};
+                VkDeviceSize offsets[] = {0};
+                vkCmdBindVertexBuffers(_command_buffers[i], 0/*binding from shader*/, 1, vertex_buffers, offsets);
+                vkCmdBindIndexBuffer(_command_buffers[i], mesh.get_index_buffer(), 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindVertexBuffers(_command_buffers[i], 0/*binding from shader*/, 1, vertex_buffers, offsets);
-
-
-            //execute our pipline
-            vkCmdDraw(_command_buffers[i], _first_mesh.get_vertex_count(), 1, 0, 0);
-            //go through our pipline 3 times without passing any values
-
+                //execute our pipline
+                vkCmdDrawIndexed(_command_buffers[i], mesh.get_index_count(), 1, 0, 0, 0);
+            }
 
             vkCmdEndRenderPass(_command_buffers[i]);
         }
