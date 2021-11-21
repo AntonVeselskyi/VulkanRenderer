@@ -1,5 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <glfw/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
 #include <vector>
@@ -36,9 +37,23 @@ int main()
     if(vk_renderer.init(window))
         return EXIT_FAILURE;
 
+    float angle = 0.f, delta_time = 0.f, last_time = 0.f;
+
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+
+        float now = glfwGetTime();
+        delta_time = now - last_time;
+        last_time = now;
+
+        angle += 360.f * delta_time;
+        if(angle > 360.f)
+            angle -= 360.f;
+
+        auto how_much_to_rotate = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f));
+        vk_renderer.updateModel(how_much_to_rotate);
+
         vk_renderer.draw();
     }
     

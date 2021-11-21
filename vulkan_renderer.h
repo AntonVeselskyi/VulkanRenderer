@@ -16,6 +16,12 @@ public:
     VulkanRenderer() = default;
 
     int init(GLFWwindow *new_window);
+
+    void updateModel(glm::mat4 new_model)
+    {
+        _mvp.model = new_model;
+    }
+
     void draw();
     void cleanup();
 
@@ -41,6 +47,31 @@ private:
 
     // Scene objects
     std::vector<Mesh> _meshes;
+
+    //Scene settings
+    struct ModelViewProjectionMatrix
+    {
+        //how camera view the world
+        glm::mat4 projection;
+        //from where camera is looking at object
+        glm::mat4 view;
+        //where object is in the world
+        glm::mat4 model;
+    } _mvp;
+
+    /// Uniform data
+    //How to organilze UBO properly (descripe it to the shader)
+    VkDescriptorSetLayout _descriptor_set_layout;
+
+    //one for each command buffer / swapchain image
+    //raw data to which descriptor sets will point
+    std::vector<VkBuffer> _uniform_buffer;
+    std::vector<VkDeviceMemory> _uniform_buffer_memory;
+
+
+    VkDescriptorPool _descriptor_pool;
+    //Describe set of data stored in buffer
+    std::vector <VkDescriptorSet> _descriptor_sets;
 
     // Vulkan components
     //The instance is the connection between your application and the Vulkan library 
@@ -100,12 +131,19 @@ private:
     void create_surface();
     void create_swapchain();
     void create_render_pass();
+    void create_descriptor_set_layout();
     void create_graphics_pipeline();
     void create_framebuffers();
     void create_command_pool();
     void create_command_buffers();
     void create_synchronization();
 
+    void create_uniform_buffers();
+    void create_descriptor_pool();
+    void create_descriptor_sets();
+
     //record
     void record_commands();
+
+    void update_uniform_buffers(uint32_t index);
 };
