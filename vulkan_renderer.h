@@ -74,13 +74,17 @@ private:
     //Describe set of data stored in buffer
     std::vector <VkDescriptorSet> _descriptor_sets;
 
-    VkDeviceSize _min_uniform_buf_offset ;
-    size_t _model_uniform_alignment;
-    size_t _model_transfer_space_size;
-    UBOModel *_model_transfer_space;
-    //Dynamic uniform buffer
-    std::vector<VkBuffer> _model_uniform_buffer;
-    std::vector<VkDeviceMemory> _model_uniform_buffer_memory;
+    //dynamic buffer stuff -- redundant
+    //VkDeviceSize _min_uniform_buf_offset;
+    //size_t _model_uniform_alignment;
+    //size_t _model_transfer_space_size;
+    //Model *_model_transfer_space;
+    ////Dynamic uniform buffer
+    //std::vector<VkBuffer> _model_uniform_buffer;
+    //std::vector<VkDeviceMemory> _model_uniform_buffer_memory;
+
+    //Push constants
+    VkPushConstantRange _push_constant_range;
 
     // Vulkan components
     //The instance is the connection between your application and the Vulkan library 
@@ -141,6 +145,7 @@ private:
     void create_swapchain();
     void create_render_pass();
     void create_descriptor_set_layout();
+    void create_push_constant_range();
     void create_graphics_pipeline();
     void create_framebuffers();
     void create_command_pool();
@@ -150,11 +155,12 @@ private:
     void create_uniform_buffers();
     void create_descriptor_pool();
     void create_descriptor_sets();
+
     void allocate_dynamic_buffers_transfer_space();
 
 
     //record
-    void record_commands();
+    void record_commands(uint32_t current_image);
 
     void update_uniform_buffers(uint32_t index);
 };

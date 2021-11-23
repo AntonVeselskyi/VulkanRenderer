@@ -10,16 +10,22 @@ layout(binding = 0) uniform UBOViewProjection
 	mat4 view;
 } ubo_vp;
 
-layout(binding = 1) uniform UBOModel
+//LEGACY
+//layout(binding = 1) uniform UBOModel
+//{
+//	mat4 model;
+//} ubo_model;
+
+//one push constant per shader
+layout(push_constant) uniform PushModel
 {
 	mat4 model;
-} ubo_model;
-
+} push_model;
 
 layout(location = 0) out vec3 fragment_color;
 
 void main()
 {
-	gl_Position = ubo_vp.projection * ubo_vp.view * ubo_model.model * vec4(position, 1.0);
+	gl_Position = ubo_vp.projection * ubo_vp.view * push_model.model * vec4(position, 1.0);
 	fragment_color = color;
 }
