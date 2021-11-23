@@ -11,6 +11,8 @@ Mesh::Mesh(VkPhysicalDevice p_device, VkDevice l_device,
 {
 	create_vertex_buffer(vertices, transfer_queue, command_pool);
 	create_index_buffer(indices, transfer_queue, command_pool);
+
+	_ubo_model.model = glm::mat4(1.f);
 }
 
 void Mesh::create_vertex_buffer(std::vector<Vertex> &vertices, VkQueue transfer_queue, VkCommandPool command_pool)

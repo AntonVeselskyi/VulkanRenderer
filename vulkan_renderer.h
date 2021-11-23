@@ -17,9 +17,12 @@ public:
 
     int init(GLFWwindow *new_window);
 
-    void updateModel(glm::mat4 new_model)
+    void updateModel(uint32_t model_id, glm::mat4 new_model)
     {
-        _mvp.model = new_model;
+        if(model_id >= _meshes.size())
+            return;
+        
+        _meshes[model_id].set_model(new_model);
     }
 
     void draw();
@@ -30,6 +33,7 @@ public:
 private:
     //max amount of images on the queue
     static constexpr uint32_t MAX_FRAME_DRAWS = 2;
+    static constexpr uint32_t MAX_OBJECTS = 20;
 
     const std::vector<const char*> _needed_device_extentions
     {
@@ -43,21 +47,19 @@ private:
 #endif
 
     GLFWwindow *_window;
-    uint32_t current_frame = 0;
+    uint32_t _current_frame = 0;
 
     // Scene objects
     std::vector<Mesh> _meshes;
 
     //Scene settings
-    struct ModelViewProjectionMatrix
+    struct UBOViewProjection
     {
         //how camera view the world
         glm::mat4 projection;
         //from where camera is looking at object
         glm::mat4 view;
-        //where object is in the world
-        glm::mat4 model;
-    } _mvp;
+    } _ubo_vp;
 
     /// Uniform data
     //How to organilze UBO properly (descripe it to the shader)
@@ -65,13 +67,20 @@ private:
 
     //one for each command buffer / swapchain image
     //raw data to which descriptor sets will point
-    std::vector<VkBuffer> _uniform_buffer;
-    std::vector<VkDeviceMemory> _uniform_buffer_memory;
-
+    std::vector<VkBuffer> _vp_uniform_buffer;
+    std::vector<VkDeviceMemory> _vp_uniform_buffer_memory;
 
     VkDescriptorPool _descriptor_pool;
     //Describe set of data stored in buffer
     std::vector <VkDescriptorSet> _descriptor_sets;
+
+    VkDeviceSize _min_uniform_buf_offset ;
+    size_t _model_uniform_alignment;
+    size_t _model_transfer_space_size;
+    UBOModel *_model_transfer_space;
+    //Dynamic uniform buffer
+    std::vector<VkBuffer> _model_uniform_buffer;
+    std::vector<VkDeviceMemory> _model_uniform_buffer_memory;
 
     // Vulkan components
     //The instance is the connection between your application and the Vulkan library 
@@ -80,7 +89,7 @@ private:
     {
         VkPhysicalDevice physical_device; //GPU
         VkDevice logical_device; //Interface to the GPU
-        QueueFamilyIndices queue_indecies;
+        QueueFamilyIndices queue_indicies;
 
     } _main_device;
     //drawing to our images
@@ -141,6 +150,8 @@ private:
     void create_uniform_buffers();
     void create_descriptor_pool();
     void create_descriptor_sets();
+    void allocate_dynamic_buffers_transfer_space();
+
 
     //record
     void record_commands();

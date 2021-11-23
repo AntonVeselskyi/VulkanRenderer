@@ -2,6 +2,12 @@
 
 #include "vk_utils.h"
 
+struct UBOModel
+{
+	//where object is in the world
+	glm::mat4 model;
+};
+
 class Mesh
 {
 public:
@@ -22,7 +28,14 @@ public:
 	uint32_t get_index_count() { return _index_count; }
 	VkBuffer get_index_buffer() { return _index_buffer; }
 
+	void set_model(glm::mat4 m) { _ubo_model.model = m; }
+	UBOModel get_model() { return _ubo_model; }
+
+
 private:
+	//each mesh holds its position in the world
+	UBOModel _ubo_model;
+
 	VkPhysicalDevice _physical_device;
 	VkDevice _logical_device;
 

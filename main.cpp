@@ -41,18 +41,30 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+        using namespace glm;
+
         glfwPollEvents();
 
         float now = glfwGetTime();
         delta_time = now - last_time;
         last_time = now;
 
-        angle += 360.f * delta_time;
+        angle += 20.f * delta_time;
         if(angle > 360.f)
             angle -= 360.f;
 
-        auto how_much_to_rotate = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f));
-        vk_renderer.updateModel(how_much_to_rotate);
+
+        mat4 first_model(1.f);
+        first_model = glm::translate(first_model, vec3(-2.f, 0.f, -5.f));
+        first_model = glm::rotate(first_model, glm::radians(angle), glm::vec3(0.f, 0.f, 1.f));
+
+
+        mat4 scnd_model(1.f);
+        scnd_model = glm::translate(scnd_model, vec3(2.f, 0.f, -5.f));
+        scnd_model = glm::rotate(scnd_model, glm::radians(-angle * 100), glm::vec3(0.f, 0.f, 1.f));
+
+        vk_renderer.updateModel(0, first_model);
+        vk_renderer.updateModel(1, scnd_model);
 
         vk_renderer.draw();
     }
