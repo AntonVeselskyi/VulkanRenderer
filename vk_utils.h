@@ -67,6 +67,11 @@ struct SwapchainImage
 };
 
 VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
+void create_image(const VkPhysicalDevice p_device, VkDevice device, uint32_t width, uint32_t height,
+                  VkFormat format, VkImageTiling tiling/*interesting!*/,
+                  VkImageUsageFlags use_flags, VkMemoryPropertyFlags mem_flags,
+                  VkDeviceMemory &image_memory, VkImage &image);
+VkFormat chooseSupportedFormat(const VkPhysicalDevice p_device, const std::vector<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags feature_flags);
 VkShaderModule create_shader_module(VkDevice logical_device, std::vector<char> &shader_code);
 
 //read as binary, spv is binary

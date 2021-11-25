@@ -1,4 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
 #include <glfw/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -55,13 +57,13 @@ int main()
 
 
         mat4 first_model(1.f);
-        first_model = glm::translate(first_model, vec3(-2.f, 0.f, -5.f));
+        first_model = glm::translate(first_model, vec3(0.f, 0.f, -2.2f));
         first_model = glm::rotate(first_model, glm::radians(angle), glm::vec3(0.f, 0.f, 1.f));
 
 
         mat4 scnd_model(1.f);
-        scnd_model = glm::translate(scnd_model, vec3(2.f, 0.f, -5.f));
-        scnd_model = glm::rotate(scnd_model, glm::radians(-angle * 100), glm::vec3(0.f, 0.f, 1.f));
+        scnd_model = glm::translate(scnd_model, vec3(0.f, 0.f, -2.9f));
+        scnd_model = glm::rotate(scnd_model, glm::radians(-angle * 3), glm::vec3(0.f, 0.f, 1.f));
 
         vk_renderer.updateModel(0, first_model);
         vk_renderer.updateModel(1, scnd_model);

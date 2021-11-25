@@ -1,6 +1,24 @@
 #include <iostream>
 #include "vk_utils.h"
 
+static uint32_t find_memory_type_index(const VkPhysicalDevice p_device, uint32_t allowed_types/*defined by buffer*/, VkMemoryPropertyFlags properties/*defined by ourselfs*/)
+{
+    VkPhysicalDeviceMemoryProperties physical_properties;
+    //Actual properties of memory sections of my GPU
+    vkGetPhysicalDeviceMemoryProperties(p_device, &physical_properties);
+
+    for(uint32_t i = 0; i < physical_properties.memoryTypeCount; ++i)
+    {
+        const bool is_type_allowed = allowed_types & (1 << i);
+        //all properties flags must match
+        const bool is_type_flags_match = (physical_properties.memoryTypes[i].propertyFlags & properties) == properties;
+
+        //return valid type
+        if(is_type_allowed && is_type_flags_match)
+            return i;
+    }
+};
+
 void create_buffer(const VkPhysicalDevice p_device, VkDevice l_device, VkDeviceSize buffer_size,
                    VkBufferUsageFlags buffer_usage_falgs, VkMemoryPropertyFlags buffer_property_falgs,
                    VkBuffer *vertex_buffer, VkDeviceMemory *vertex_buffer_memory)
@@ -26,29 +44,11 @@ void create_buffer(const VkPhysicalDevice p_device, VkDevice l_device, VkDeviceS
     VkMemoryRequirements memory_requirements;
     vkGetBufferMemoryRequirements(l_device, *vertex_buffer, &memory_requirements);
 
-    auto findMemoryTypeIndex = [&](uint32_t allowed_types/*defined by buffer*/, VkMemoryPropertyFlags properties/*defined by ourselfs*/)
-    {
-        VkPhysicalDeviceMemoryProperties physical_properties;
-        //Actual properties of memory sections of my GPU
-        vkGetPhysicalDeviceMemoryProperties(p_device, &physical_properties);
-
-        for(uint32_t i = 0; i < physical_properties.memoryTypeCount; ++i)
-        {
-            const bool is_type_allowed = allowed_types & (1 << i);
-            //all properties flags must match
-            const bool is_type_flags_match = (physical_properties.memoryTypes[i].propertyFlags & properties) == properties;
-
-            //return valid type
-            if(is_type_allowed && is_type_flags_match)
-                return i;
-        }
-    };
-
     VkMemoryAllocateInfo alloc_info
     {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .allocationSize = memory_requirements.size,
-        .memoryTypeIndex = findMemoryTypeIndex(memory_requirements.memoryTypeBits, buffer_property_falgs)
+        .memoryTypeIndex = find_memory_type_index(p_device, memory_requirements.memoryTypeBits, buffer_property_falgs)
     };
 
     //3
@@ -265,6 +265,82 @@ VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format, V
         throw std::runtime_error("Failed to create an image view");
 
     return image_view;
+}
+
+void create_image(const VkPhysicalDevice p_device, VkDevice device, uint32_t width, uint32_t height,
+                  VkFormat format, VkImageTiling tiling/*interesting!*/,
+                  VkImageUsageFlags use_flags, VkMemoryPropertyFlags mem_flags,
+                  VkDeviceMemory &image_memory, VkImage &image)
+{
+    //Create image
+    VkImageCreateInfo create_info
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = format,
+        //depth 1 -- no 3d aspect
+        .extent = {.width = width, .height = height, .depth = 1},
+        //LoD, 1 mipmap level
+        .mipLevels = 1,
+        //often used for cubemaps
+        .arrayLayers = 1,
+        //no multisampling for now
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        //how image data should be arranged in memory
+        .tiling = tiling,
+        .usage = use_flags,
+        //can be shared betweeen queues
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        //will be changed when we process framebuffer
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    VkResult res = vkCreateImage(device, &create_info, nullptr, &image);
+    if(res != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create an image!");
+    }
+
+    //Create memory for an image
+    VkMemoryRequirements memory_reqs;
+    vkGetImageMemoryRequirements(device, image, &memory_reqs);
+    
+    VkMemoryAllocateInfo alloc_info
+    {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = memory_reqs.size,
+        //index on the memory device that will be used
+        .memoryTypeIndex = find_memory_type_index(p_device, memory_reqs.memoryTypeBits, mem_flags)
+    };
+
+    res = vkAllocateMemory(device, &alloc_info, nullptr, &image_memory);
+    if(res != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate image memory!");
+    }
+
+    //Connect memory to image
+    vkBindImageMemory(device, image, image_memory, 0);
+}
+
+VkFormat chooseSupportedFormat(const VkPhysicalDevice p_device, const std::vector<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags feature_flags)
+{
+    for(VkFormat format : formats)
+    {
+        //Get the property of format on this device
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(p_device, format, &properties);
+        if(tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & feature_flags) == feature_flags)
+        {
+            return format;
+        }
+        else if(tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & feature_flags) == feature_flags)
+        {
+            return format;
+        }
+    }
+
+    throw std::runtime_error("Failed to find supported image format!");
 }
 
 VkShaderModule create_shader_module(VkDevice logical_device, std::vector<char> &shader_code)

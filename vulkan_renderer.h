@@ -114,6 +114,12 @@ private:
     //SwapchainImage <--> VkFramebuffer <--> VkCommandBuffer
     std::vector<VkCommandBuffer> _command_buffers;
 
+    //We created one not (vector), cause we can reuse it for all images
+    VkImage _depth_buffer_image;
+    VkFormat _depth_buffer_format;
+    VkDeviceMemory _depth_buffer_memory;
+    VkImageView _depth_buffer_image_view;
+
     //pipeline
     VkPipelineLayout _pipline_layout;
     VkRenderPass _render_pass;
@@ -147,6 +153,7 @@ private:
     void create_descriptor_set_layout();
     void create_push_constant_range();
     void create_graphics_pipeline();
+    void create_depth_buffer_image();
     void create_framebuffers();
     void create_command_pool();
     void create_command_buffers();
